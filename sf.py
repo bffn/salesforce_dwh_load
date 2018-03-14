@@ -4,6 +4,7 @@ import json
 import time
 import re
 import datetime
+import shlex
 from simple_salesforce import Salesforce
 csvfile = '/home/bffn/salesforse/csvdata.csv'
 skip=True  #skip first row
@@ -15,6 +16,21 @@ cred=[x.strip() for x in cred_f]
 sf = Salesforce(username=cred[0], password=cred[1], security_token=cred[2]) #connect to SF
 cred_f.close()
 #########################
+def data_parser_new(d_row,acc):
+    out_json={}
+    data_list=[]
+    for row in d_row.strip().split('||'):
+        row=row.replace(';',' ')#for debug
+        row_data={}
+        value=re.split("[a-zA-Z_]+:", row)
+        key=re.findall("[a-zA-Z_]+:", row)
+        value.remove('')
+        for row in range(0, len(key)):
+            row_data.update({key[row].replace(':',''): value[row].strip()})
+        data_list.append(row_data)
+    out_json.update({'records': data_list, 'Acc': acc})
+    return out_json
+
 def data_parser(d_row, acc): 
     out_json={}
     data_list=[]
@@ -52,6 +68,7 @@ def bulk_del(d_ids, obj): #del data from SF
         elif obj=='Task':
             sf.bulk.Task.delete(res)
 #main code
+print("Skript started at",time.strftime('%X'))
 bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Sales_rep_with_opportunity__c"))), 'Sales_rep_with_opportunity__c')
 bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Responsible_presales_person__c"))), 'Responsible_presales_person__c')
 bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Contract"))), 'Contract')
@@ -60,7 +77,7 @@ bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Opportunity"))), 'Opport
 bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Account"))), 'Account')
 bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Sales_rep__c"))), 'Sales_rep__c')
 bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Staff_for_Projects__c"))), 'Staff_for_Projects__c')
-bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Task"))), 'Task')
+#bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Task"))), 'Task') Task deleted with accounts
 print('Delete complete')
 try:
     f=open(csvfile,'r')
@@ -100,7 +117,7 @@ for row in f:
         #opp_data.update({'Contract_num': data_parser(data[4],data[0])['records'][0]['Project_of_Sale__c']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
     opp_bulk.append(opp_data)
     if data[4] != '': #check if contact empty
-        contact_pre_bulk.append(data_parser(data[4], data[0])) #get contact data
+        contact_pre_bulk.append(data_parser_new(data[4], data[0])) #get contact data
     if data[5] != '': #check if contract empty
         contract_pre_bulk.append(data_parser(data[5],data[0]))
     if data[6] != '': #check if sales_rep empty
@@ -250,3 +267,5 @@ for res_presal_per_pre_bulk_row in res_presal_per_pre_bulk:
 sf.bulk.Responsible_presales_person__c.insert(res_presal_per__bulk)
 #END SECTION OF GETTING Responsible presales person DATA
 sf.bulk.Task.insert(activity_bulk)
+print("Reload complite")
+print("Skript finished at",time.strftime('%X'))
