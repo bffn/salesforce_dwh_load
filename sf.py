@@ -28,6 +28,8 @@ def data_parser_new(d_row,acc):
         key=re.findall("[a-zA-Z_]+:", row)
         value.remove('')
         for row in range(0, len(key)):
+            if key[row].replace(':','') == 'Title':
+                value[row]=value[row].strip()[:128]
             row_data.update({key[row].replace(':',''): value[row].strip()})
         data_list.append(row_data)
     out_json.update({'records': data_list, 'Acc': acc})
@@ -122,12 +124,16 @@ for data in reader(f):
         #skip=False v1
         #continue v1
     #data=row.strip().split(',') v1
-    acc_data={'Name': data[0], 'BillingCountry': data[2]} #get acc data
+    if data[4] == 'Open':
+        acc_active = 'Yes'
+    else:
+        acc_active = 'No'
+    acc_data={'Name': data[0], 'BillingCountry': data[2], 'Active__c': acc_active} #get acc data
     if acc_data['Name'] not in acc_names: #check unique account name
         acc_names.append(data[0])
         acc_id_name_j={'Id':json.loads(json.dumps(sf.Account.create(acc_data)))['id'], 'Name': data[0]}
         acc_id_name.append(acc_id_name_j)
-    opp_data={'Acc': data[0], 'Name':'Opportunity for '+data[0], 'Competence__c': data[3], 'Name': data[1], 'StageName': 'Closed Won', 'CloseDate': '2018-12-31'}  #get opp data
+    opp_data={'Acc': data[0], 'Name':'Opportunity for '+data[0], 'Competence__c': data[3], 'Name': data[1], 'StageName': 'Prospecting', 'CloseDate': str(datetime.date.today() + datetime.timedelta(92))}  #get opp data
     #if data[4] != '': #add Project_of_Sale__c to opp to get contract id later; check if contract empty #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
         #opp_data.update({'Contract_num': data_parser(data[4],data[0])['records'][0]['Project_of_Sale__c']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
     opp_bulk.append(opp_data)
@@ -161,8 +167,7 @@ for data in reader(f):
         cur_date_p_month=current_date+datetime.timedelta(30)
         activity_bulk.append({'ActivityDate': cur_date_p_month.strftime('%Y-%m-%d'),'Subject': 'TBD', 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Not Started'})
     else:
-        print(data[10])
-        if data[10] != '': #check if next_activity empty
+        if data[10] != '' and  data[10] != 'Не требуется': #check if next_activity empty or не требуется
             if data[9] != '' and data[9] != '-': #check if next_activity_date empty
                 activity=data[10].split('||')
                 if re.match(r'(\d+/\d+/\d+)',activity[0]):
@@ -193,9 +198,9 @@ for contr in contract_pre_bulk:
     for data in acc_id_name:
         if data['Name'] == contr['Acc']:
              contr['records'][0].update({'AccountId': data['Id']}) #Add AccId
-             contr['records'][0].update({'CustomerSignedId': json.loads(json.dumps(sf.query("SELECT Id from Contact WHERE FirstName = " + "'" + row['FirstName'] + "'" + " and LastName = " + "'" + row['LastName'] + "'")))['records'][0]['Id']}) #Add Contact Id to contract
-             del contr['records'][0]['FirstName']
-             del contr['records'][0]['LastName']
+             #contr['records'][0].update({'CustomerSignedId': json.loads(json.dumps(sf.query("SELECT Id from Contact WHERE FirstName = " + "'" + row['FirstName'] + "'" + " and LastName = " + "'" + row['LastName'] + "'")))['records'][0]['Id']}) #Add Contact Id to contract for contact-contract link may be not working
+             #del contr['records'][0]['FirstName']
+             #del contr['records'][0]['LastName']
              contract_bulk.append(contr['records'][0])
 sf.bulk.Contract.insert(contract_bulk)
 for opp in opp_bulk: #Add AccId to opportunity JSON
@@ -208,6 +213,7 @@ for opp in opp_bulk: #Add AccId to opportunity JSON
     opp_id_name.append(opp_id_name_j)
     #opp.update({'ContractId': json.loads(json.dumps(sf.query("SELECT Id from Contract WHERE Project_of_Sale__c = " + opp['Contract_num'])))['records'][0]['Id']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
     #del opp['Contract_num'] #FOR CONTRACTID IN OPPORTUNITY
+print('b0')
 #START SECTION OF GETTING Sales rep DATA
 for sales_reps in sales_rep_pre_bulk:
     sales_reps = sales_reps['records']
