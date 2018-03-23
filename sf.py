@@ -5,6 +5,7 @@ import time
 import re
 import datetime
 import shlex
+import urllib.request
 from csv import reader
 from simple_salesforce import Salesforce
 csvfile_raw = '/home/bffn/salesforse/csvdata_raw.csv'
@@ -18,6 +19,10 @@ cred=[x.strip() for x in cred_f]
 sf = Salesforce(username=cred[0], password=cred[1], security_token=cred[2]) #connect to SF
 cred_f.close()
 #########################
+def download_doc():
+    contents = urllib.request.urlopen("http://google.by").read()
+    print(contents)
+    print('no_doc')
 def data_parser_new(d_row,acc):
     out_json={}
     data_list=[]
@@ -73,6 +78,8 @@ def bulk_del(d_ids, obj): #del data from SF
             sf.bulk.Task.delete(res)
 #main code
 print("Skript started at",time.strftime('%X'))
+download_doc()
+sys.exit()
 #Parse raw file in csvfile
 f=open(csvfile,'w+')
 try:
@@ -133,7 +140,7 @@ for data in reader(f):
         acc_names.append(data[0])
         acc_id_name_j={'Id':json.loads(json.dumps(sf.Account.create(acc_data)))['id'], 'Name': data[0]}
         acc_id_name.append(acc_id_name_j)
-    opp_data={'Acc': data[0], 'Name':'Opportunity for '+data[0], 'Competence__c': data[3], 'Name': data[1], 'StageName': 'Prospecting', 'CloseDate': str(datetime.date.today() + datetime.timedelta(92))}  #get opp data
+    opp_data={'Acc': data[0], 'Name':'Opportunity for '+data[0], 'Competencies__c': data[3], 'Name': data[1], 'StageName': 'Prospecting', 'CloseDate': str(datetime.date.today() + datetime.timedelta(92))}  #get opp data
     #if data[4] != '': #add Project_of_Sale__c to opp to get contract id later; check if contract empty #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
         #opp_data.update({'Contract_num': data_parser(data[4],data[0])['records'][0]['Project_of_Sale__c']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
     opp_bulk.append(opp_data)
@@ -152,7 +159,7 @@ for data in reader(f):
                 last_act={'ActivityDate': datetime.datetime.strptime(data[7], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[0].replace(re.search(r'(\d+/\d+/\d+)',activity[0]).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Completed'}
                 activity_bulk.append(last_act)
                 for i in range(1,len(activity),1):
-                    if re.match(r'(\d+/\d+/\d+)',activity[i]):
+                    if re.match(r'(\d+/\d+/\d+)',activity[i].strip()):
                          last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',activity[i]).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[i].replace(re.search(r'(\d+/\d+/\d+)',activity[i]).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Completed'}
                          activity_bulk.append(last_act)
             else:
@@ -174,7 +181,7 @@ for data in reader(f):
                     last_act={'ActivityDate': datetime.datetime.strptime(data[9], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[0].replace(re.search(r'(\d+/\d+/\d+)',activity[0]).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Not Started'}
                     activity_bulk.append(last_act)
                     for i in range(1,len(activity),1):
-                        if re.match(r'(\d+/\d+/\d+)',activity[i]):
+                        if re.match(r'(\d+/\d+/\d+)',activity[i].strip()):
                             last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',activity[i]).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[i].replace(re.search(r'(\d+/\d+/\d+)',activity[i]).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Not Started'}
                             activity_bulk.append(last_act)
                 else:
@@ -213,7 +220,6 @@ for opp in opp_bulk: #Add AccId to opportunity JSON
     opp_id_name.append(opp_id_name_j)
     #opp.update({'ContractId': json.loads(json.dumps(sf.query("SELECT Id from Contract WHERE Project_of_Sale__c = " + opp['Contract_num'])))['records'][0]['Id']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
     #del opp['Contract_num'] #FOR CONTRACTID IN OPPORTUNITY
-print('b0')
 #START SECTION OF GETTING Sales rep DATA
 for sales_reps in sales_rep_pre_bulk:
     sales_reps = sales_reps['records']
