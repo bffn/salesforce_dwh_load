@@ -20,8 +20,6 @@ sf = Salesforce(username=cred[0], password=cred[1], security_token=cred[2]) #con
 cred_f.close()
 #########################
 def download_doc():
-    contents = urllib.request.urlopen("http://google.by").read()
-    print(contents)
     print('no_doc')
 def data_parser_new(d_row,acc):
     out_json={}
@@ -77,9 +75,8 @@ def bulk_del(d_ids, obj): #del data from SF
         elif obj=='Task':
             sf.bulk.Task.delete(res)
 #main code
-print("Skript started at",time.strftime('%X'))
+print("Script started at",time.strftime('%X'))
 download_doc()
-sys.exit()
 #Parse raw file in csvfile
 f=open(csvfile,'w+')
 try:
@@ -124,6 +121,10 @@ s_f_p_id_names=[]
 res_presal_per_pre_bulk=[]
 res_presal_per__bulk=[]
 activity_bulk=[]
+opp_contact_bulk=[]
+contact_acc_id=[]
+opp_acc_id=[]
+opportunity_contact=[]
 f.seek(0) #read file from begining
 for data in reader(f):
 #for row in f: v1
@@ -156,51 +157,61 @@ for data in reader(f):
         if data[7] != '': #check if last_activity_date empty
             activity=data[8].split('||')
             if re.match(r'(\d+/\d+/\d+)',activity[0]):
-                last_act={'ActivityDate': datetime.datetime.strptime(data[7], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[0].replace(re.search(r'(\d+/\d+/\d+)',activity[0]).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Completed'}
+                last_act={'ActivityDate': datetime.datetime.strptime(data[7], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[0].replace(re.search(r'(\d+/\d+/\d+)',activity[0]).group(),'').strip(), 'Priority': 'Normal', 'Status': 'Completed', 'Opportunity': data[1]}
                 activity_bulk.append(last_act)
                 for i in range(1,len(activity),1):
                     if re.match(r'(\d+/\d+/\d+)',activity[i].strip()):
-                         last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',activity[i]).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[i].replace(re.search(r'(\d+/\d+/\d+)',activity[i]).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Completed'}
+                         last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',activity[i]).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[i].replace(re.search(r'(\d+/\d+/\d+)',activity[i]).group(),'').strip(), 'Priority': 'Normal', 'Status': 'Completed', 'Opportunity': data[1]}
                          activity_bulk.append(last_act)
             else:
-                last_act={'ActivityDate': datetime.datetime.strptime(data[7], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': data[8], 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Completed'}
+                last_act={'ActivityDate': datetime.datetime.strptime(data[7], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': data[8], 'Priority': 'Normal', 'Status': 'Completed', 'Opportunity': data[1]}
                 activity_bulk.append(last_act)
         else:
             activity=data[8].split('||')
             for row in activity:
-                last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',row).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': row.replace(re.search(r'(\d+/\d+/\d+)',row).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Completed'}
+                last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',row).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': row.replace(re.search(r'(\d+/\d+/\d+)',row).group(),'').strip(), 'Priority': 'Normal', 'Status': 'Completed', 'Opportunity': data[1]}
                 activity_bulk.append(last_act)
     if data[9] == 'TBD':
         cur_date_p_month=current_date+datetime.timedelta(30)
-        activity_bulk.append({'ActivityDate': cur_date_p_month.strftime('%Y-%m-%d'),'Subject': 'TBD', 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Not Started'})
+        activity_bulk.append({'ActivityDate': cur_date_p_month.strftime('%Y-%m-%d'),'Subject': 'TBD', 'Priority': 'Normal', 'Status': 'Not Started', 'Opportunity': data[1]})
     else:
         if data[10] != '' and  data[10] != 'Не требуется': #check if next_activity empty or не требуется
             if data[9] != '' and data[9] != '-': #check if next_activity_date empty
                 activity=data[10].split('||')
                 if re.match(r'(\d+/\d+/\d+)',activity[0]):
-                    last_act={'ActivityDate': datetime.datetime.strptime(data[9], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[0].replace(re.search(r'(\d+/\d+/\d+)',activity[0]).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Not Started'}
+                    last_act={'ActivityDate': datetime.datetime.strptime(data[9], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[0].replace(re.search(r'(\d+/\d+/\d+)',activity[0]).group(),'').strip(), 'Priority': 'Normal', 'Status': 'Not Started', 'Opportunity': data[1]}
                     activity_bulk.append(last_act)
                     for i in range(1,len(activity),1):
                         if re.match(r'(\d+/\d+/\d+)',activity[i].strip()):
-                            last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',activity[i]).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[i].replace(re.search(r'(\d+/\d+/\d+)',activity[i]).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Not Started'}
+                            last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',activity[i]).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': activity[i].replace(re.search(r'(\d+/\d+/\d+)',activity[i]).group(),'').strip(), 'Priority': 'Normal', 'Status': 'Not Started', 'Opportunity': data[1]}
                             activity_bulk.append(last_act)
                 else:
-                    last_act={'ActivityDate': datetime.datetime.strptime(data[9], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': data[10], 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Not Started'}
+                    last_act={'ActivityDate': datetime.datetime.strptime(data[9], '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': data[10], 'Priority': 'Normal', 'Status': 'Not Started', 'Opportunity': data[1]}
                     activity_bulk.append(last_act)
             else:
                 activity=data[10].split('||')
                 for row in activity:
-                    last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',row).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': row.replace(re.search(r'(\d+/\d+/\d+)',row).group(),'').strip(), 'WhatId': acc_id_name_j['Id'], 'Priority': 'Normal', 'Status': 'Not Started'}
+                    last_act={'ActivityDate': datetime.datetime.strptime(re.search(r'(\d+/\d+/\d+)',row).group(), '%m/%d/%Y').strftime('%Y-%m-%d'), 'Subject': row.replace(re.search(r'(\d+/\d+/\d+)',row).group(),'').strip(), 'Priority': 'Normal', 'Status': 'Not Started', 'Opportunity': data[1]}
                     activity_bulk.append(last_act)
 f.close()
+for opp in opp_bulk: #Add AccId to opportunity JSON
+    for data in acc_id_name:
+        if data['Name'] == opp['Acc']:
+            acc_id=data['Id']
+    opp.update({'AccountId': acc_id})
+    del opp['Acc']
+    opp_id_name_j={'Id':json.loads(json.dumps(sf.Opportunity.create(opp)))['id'], 'Name': opp['Name']}
+    opp_acc_id.append({'OppId': opp_id_name_j['Id'], 'AccountId': acc_id})
+    opp_id_name.append(opp_id_name_j)
+    #opp.update({'ContractId': json.loads(json.dumps(sf.query("SELECT Id from Contract WHERE Project_of_Sale__c = " + opp['Contract_num'])))['records'][0]['Id']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
+    #del opp['Contract_num'] #FOR CONTRACTID IN OPPORTUNITY
 for cont in contact_pre_bulk: #Add AccId to contact JSON
     for data in acc_id_name:
          if data['Name'] == cont['Acc']:
              acc_id=data['Id']
     for row in cont['records']:
         row.update({'AccountId': acc_id})
-        contact_bulk.append(row)
-sf.bulk.Contact.insert(contact_bulk)
+        contact_acc_id.append({'ContactId':json.loads(json.dumps(sf.Contact.create(row)))['id'], 'AccId': row['AccountId']})
 for contr in contract_pre_bulk:
     for data in acc_id_name:
         if data['Name'] == contr['Acc']:
@@ -210,16 +221,6 @@ for contr in contract_pre_bulk:
              #del contr['records'][0]['LastName']
              contract_bulk.append(contr['records'][0])
 sf.bulk.Contract.insert(contract_bulk)
-for opp in opp_bulk: #Add AccId to opportunity JSON
-    for data in acc_id_name:
-        if data['Name'] == opp['Acc']:
-            acc_id=data['Id']
-    opp.update({'AccountId': acc_id})
-    del opp['Acc']
-    opp_id_name_j={'Id':json.loads(json.dumps(sf.Opportunity.create(opp)))['id'], 'Name': opp['Name']}
-    opp_id_name.append(opp_id_name_j)
-    #opp.update({'ContractId': json.loads(json.dumps(sf.query("SELECT Id from Contract WHERE Project_of_Sale__c = " + opp['Contract_num'])))['records'][0]['Id']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
-    #del opp['Contract_num'] #FOR CONTRACTID IN OPPORTUNITY
 #START SECTION OF GETTING Sales rep DATA
 for sales_reps in sales_rep_pre_bulk:
     sales_reps = sales_reps['records']
@@ -298,6 +299,17 @@ for res_presal_per_pre_bulk_row in res_presal_per_pre_bulk:
             break
 sf.bulk.Responsible_presales_person__c.insert(res_presal_per__bulk)
 #END SECTION OF GETTING Responsible presales person DATA
+for row in activity_bulk: #for Tasks
+    for opp_id in opp_id_name:
+        if row['Opportunity'] == opp_id['Name']:
+            row.update({'WhatId': opp_id['Id']})
+            del row['Opportunity']
+            break
+for opp_acc_row in opp_acc_id: #for OpportunityContact
+    for cont_acc_row in contact_acc_id:
+        if opp_acc_row['AccountId'] == cont_acc_row['AccId']:
+            opportunity_contact.append({'OpportunityId': opp_acc_row['OppId'], 'ContactId': cont_acc_row['ContactId']})
 sf.bulk.Task.insert(activity_bulk)
-print("Reload complite")
-print("Skript finished at",time.strftime('%X'))
+sf.bulk.OpportunityContactRole.insert(opportunity_contact)
+print("Reload complete")
+print("Script finished at",time.strftime('%X'))
