@@ -21,7 +21,8 @@ cred_f.close()
 #########################
 def download_doc():
     print('no_doc')
-def data_parser_new(d_row,acc):
+	
+def data_parser(d_row,acc):
     out_json={}
     data_list=[]
     for row in d_row.strip().split('||'):
@@ -38,17 +39,17 @@ def data_parser_new(d_row,acc):
     out_json.update({'records': data_list, 'Acc': acc})
     return out_json
 
-def data_parser(d_row, acc): 
-    out_json={}
-    data_list=[]
-    for row in d_row.strip().split('||'):
-        row_data={}
-        for field in row.split(';'):
-            p_f=field.split(':')
-            row_data.update({p_f[0]: p_f[1]})
-        data_list.append(row_data)
-    out_json.update({'records': data_list, 'Acc': acc})
-    return out_json
+# def data_parser(d_row, acc): 
+    # out_json={}
+    # data_list=[]
+    # for row in d_row.strip().split('||'):
+        # row_data={}
+        # for field in row.split(';'):
+            # p_f=field.split(':')
+            # row_data.update({p_f[0]: p_f[1]})
+        # data_list.append(row_data)
+    # out_json.update({'records': data_list, 'Acc': acc})
+    # return out_json
 
 def bulk_del(d_ids, obj): #del data from SF
     res=[]
@@ -103,7 +104,7 @@ bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Staff_for_Projects__c"))
 print('Delete complete')
 current_date = datetime.datetime.now()
 acc_id_name=[]
-acc_names=[] #for unique acc
+acc_names=[]
 opp_bulk=[]
 opp_id_name=[]
 contact_pre_bulk=[]
@@ -122,16 +123,11 @@ res_presal_per_pre_bulk=[]
 res_presal_per__bulk=[]
 activity_bulk=[]
 opp_contact_bulk=[]
-contact_acc_id=[]
 opp_acc_id=[]
+contact_acc_id=[]
 opportunity_contact=[]
 f.seek(0) #read file from begining
 for data in reader(f):
-#for row in f: v1
-    #if skip:  #skip first row v1
-        #skip=False v1
-        #continue v1
-    #data=row.strip().split(',') v1
     if data[4] == 'Open':
         acc_active = 'Yes'
     else:
@@ -146,13 +142,13 @@ for data in reader(f):
         #opp_data.update({'Contract_num': data_parser(data[4],data[0])['records'][0]['Project_of_Sale__c']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
     opp_bulk.append(opp_data)
     if data[6] != '' and data[6] != 'Unknown' and data[6] != '-': #check if contact empty
-        contact_pre_bulk.append(data_parser_new(data[6], data[0])) #get contact data
+        contact_pre_bulk.append(data_parser(data[6], data[0])) #get contact data
     if data[12] != '': #check if contract empty
-        contract_pre_bulk.append(data_parser_new(data[12],data[0]))
+        contract_pre_bulk.append(data_parser(data[12],data[0]))
     if data[5] != '': #check if sales_rep empty
-        sales_rep_pre_bulk.append(data_parser_new(data[5],data[1]))
+        sales_rep_pre_bulk.append(data_parser(data[5],data[1]))
     if data[11] != '': #check if staff_for_proj_empty
-        staff_for_proj_pre_bulk.append(data_parser_new(data[11],data[1]))
+        staff_for_proj_pre_bulk.append(data_parser(data[11],data[1]))
     if data[8] != '': #check if last_activity empty
         if data[7] != '': #check if last_activity_date empty
             activity=data[8].split('||')
