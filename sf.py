@@ -51,30 +51,38 @@ def data_parser(d_row,acc):
     # out_json.update({'records': data_list, 'Acc': acc})
     # return out_json
 
-def bulk_del(d_ids, obj): #del data from SF
+def bulk_del(d_ids, obj):
     res=[]
     for x in d_ids['records']:
         del_id={'Id': x['Id']}
         res.append(del_id)
     if res:
-        if obj=='Account':
-            sf.bulk.Account.delete(res)
-        elif obj=='Opportunity':
-            sf.bulk.Opportunity.delete(res)
-        elif obj=='Contact':
-            sf.bulk.Contact.delete(res)
-        elif obj=='Contract':
-            sf.bulk.Contract.delete(res)
-        elif obj=='Sales_rep__c':
-            sf.bulk.Sales_rep__c.delete(res)
-        elif obj=='Sales_rep_with_opportunity__c':
-            sf.bulk.Sales_rep_with_opportunity__c.delete(res)
-        elif obj=='Staff_for_Projects__c':
-            sf.bulk.Staff_for_Projects__c.delete(res)
-        elif obj=='Responsible_presales_person__c':
-            sf.bulk.Responsible_presales_person__c.delete(res)
-        elif obj=='Task':
-            sf.bulk.Task.delete(res)
+        obj(res)
+
+# def bulk_del(d_ids, obj): #del data from SF
+    # res=[]
+    # for x in d_ids['records']:
+        # del_id={'Id': x['Id']}
+        # res.append(del_id)
+    # if res:
+        # if obj=='Account':
+            # sf.bulk.Account.delete(res)
+        # elif obj=='Opportunity':
+            # sf.bulk.Opportunity.delete(res)
+        # elif obj=='Contact':
+            # sf.bulk.Contact.delete(res)
+        # elif obj=='Contract':
+            # sf.bulk.Contract.delete(res)
+        # elif obj=='Sales_rep__c':
+            # sf.bulk.Sales_rep__c.delete(res)
+        # elif obj=='Sales_rep_with_opportunity__c':
+            # sf.bulk.Sales_rep_with_opportunity__c.delete(res)
+        # elif obj=='Staff_for_Projects__c':
+            # sf.bulk.Staff_for_Projects__c.delete(res)
+        # elif obj=='Responsible_presales_person__c':
+            # sf.bulk.Responsible_presales_person__c.delete(res)
+        # elif obj=='Task':
+            # sf.bulk.Task.delete(res)
 #main code
 print("Script started at",time.strftime('%X'))
 download_doc()
@@ -92,14 +100,14 @@ for row in f_raw:
         f.write(row.replace(',/end_of_line',''))
     else:
         f.write(row.strip()+' ')
-bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Sales_rep_with_opportunity__c"))), 'Sales_rep_with_opportunity__c')
-bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Responsible_presales_person__c"))), 'Responsible_presales_person__c')
-bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Contract"))), 'Contract')
-bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Contact"))), 'Contact')
-bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Opportunity"))), 'Opportunity')
-bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Account"))), 'Account')
-bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Sales_rep__c"))), 'Sales_rep__c')
-bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Staff_for_Projects__c"))), 'Staff_for_Projects__c')
+bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Sales_rep_with_opportunity__c"))), sf.bulk.Sales_rep_with_opportunity__c.delete)
+bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Responsible_presales_person__c"))), sf.bulk.Responsible_presales_person__c.delete)
+bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Contract"))), sf.bulk.Contract.delete)
+bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Contact"))), sf.bulk.Contact.delete)
+bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Opportunity"))), sf.bulk.Opportunity.delete)
+bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Account"))), sf.bulk.Account.delete)
+bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Sales_rep__c"))), sf.bulk.Sales_rep__c.delete)
+bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Staff_for_Projects__c"))), sf.bulk.Staff_for_Projects__c.delete)
 #bulk_del(json.loads(json.dumps(sf.query("SELECT Id from Task"))), 'Task') Task deleted with accounts
 print('Delete complete')
 current_date = datetime.datetime.now()
