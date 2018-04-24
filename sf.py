@@ -4,8 +4,6 @@ import json
 import time
 import re
 import datetime
-import shlex
-import urllib.request
 from csv import reader
 from simple_salesforce import Salesforce
 csvfile_raw = '/home/bffn/salesforse/csvdata_raw.csv'
@@ -21,7 +19,7 @@ cred_f.close()
 #########################
 def download_doc():
     print('no_doc')
-	
+
 def data_parser(d_row,acc):
     out_json={}
     data_list=[]
@@ -31,7 +29,7 @@ def data_parser(d_row,acc):
         value=re.split("[a-zA-Z_]+:", row)
         key=re.findall("[a-zA-Z_]+:", row)
         value.remove('')
-        for row in range(0, len(key)):
+        for row in range(len(key)):
             if key[row].replace(':','') == 'Title':
                 value[row]=value[row].strip()[:128]
             row_data.update({key[row].replace(':',''): value[row].strip()})
@@ -39,7 +37,7 @@ def data_parser(d_row,acc):
     out_json.update({'records': data_list, 'Acc': acc})
     return out_json
 
-# def data_parser(d_row, acc): 
+# def data_parser(d_row, acc):
     # out_json={}
     # data_list=[]
     # for row in d_row.strip().split('||'):
