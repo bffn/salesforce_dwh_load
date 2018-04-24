@@ -29,10 +29,10 @@ def data_parser(d_row,acc):
         value=re.split("[a-zA-Z_]+:", row)
         key=re.findall("[a-zA-Z_]+:", row)
         value.remove('')
-        for row in range(len(key)):
-            if key[row].replace(':','') == 'Title':
-                value[row]=value[row].strip()[:128]
-            row_data.update({key[row].replace(':',''): value[row].strip()})
+        for index, key_elem in enumerate(key):
+            if key[index].replace(':','') == 'Title':
+                value[index]=value[index].strip()[:128]
+            row_data.update({key[index].replace(':',''): value[index].strip()})
         data_list.append(row_data)
     out_json.update({'records': data_list, 'Acc': acc})
     return out_json
