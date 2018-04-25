@@ -143,7 +143,7 @@ for data in reader(f):
         acc_names.append(data[0])
         acc_id_name_j={'Id':json.loads(json.dumps(sf.Account.create(acc_data)))['id'], 'Name': data[0]}
         acc_id_name.append(acc_id_name_j)
-    opp_data={'Acc': data[0], 'Name':'Opportunity for '+data[0], 'Competencies__c': data[3], 'Name': data[1], 'StageName': 'Prospecting', 'CloseDate': str(datetime.date.today() + datetime.timedelta(92))}  #get opp data
+    opp_data={'Acc': data[0], 'Competencies__c': data[3], 'Name': data[1], 'StageName': 'Prospecting', 'CloseDate': str(datetime.date.today() + datetime.timedelta(92))}  #get opp data
     #if data[4] != '': #add Project_of_Sale__c to opp to get contract id later; check if contract empty #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
         #opp_data.update({'Contract_num': data_parser(data[4],data[0])['records'][0]['Project_of_Sale__c']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
     opp_bulk.append(opp_data)
