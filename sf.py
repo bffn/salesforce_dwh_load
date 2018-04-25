@@ -20,7 +20,7 @@ cred_f.close()
 def download_doc():
     print('no_doc')
 
-def data_parser(d_row,acc):
+def data_parser(d_row,acc, obj_type):
     out_json={}
     data_list=[]
     for row in d_row.strip().split('||'):
@@ -32,7 +32,25 @@ def data_parser(d_row,acc):
         for index, key_elem in enumerate(key):
             if key_elem.replace(':','') == 'Title':
                 value[index]=value[index].strip()[:128]
-            row_data.update({key_elem.replace(':',''): value[index].strip()})
+            if key_elem.replace(':','') == 'Name':
+                fio = value[index].split()
+                for fio_index, fio_value in enumerate(fio):
+                    if obj_type == 'contact':
+                        if fio_index == 0:
+                            row_data.update({'LastName': fio_value})
+                        elif fio_index == 1:
+                            row_data.update({'FirstName': fio_value})
+                        elif fio_index == 2:
+                            row_data.update({'Middle_Name__c': fio_value})
+                    elif obj_type == 'sales_rep' or obj_type == 'staff_for_proj':
+                        if fio_index == 0:
+                            row_data.update({'Name': fio_value})
+                        elif fio_index == 1:
+                            row_data.update({'First_Name__c': fio_value})
+                        elif fio_index == 2:
+                            row_data.update({'Middle_Name__c': fio_value})
+            else:
+                row_data.update({key_elem.replace(':',''): value[index].strip()})
         data_list.append(row_data)
     out_json.update({'records': data_list, 'Acc': acc})
     return out_json
@@ -148,13 +166,13 @@ for data in reader(f):
         #opp_data.update({'Contract_num': data_parser(data[4],data[0])['records'][0]['Project_of_Sale__c']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
     opp_bulk.append(opp_data)
     if data[6] != '' and data[6] != 'Unknown' and data[6] != '-': #check if contact empty
-        contact_pre_bulk.append(data_parser(data[6], data[0])) #get contact data
+        contact_pre_bulk.append(data_parser(data[6], data[0], 'contact')) #get contact data
     if data[12] != '': #check if contract empty
-        contract_pre_bulk.append(data_parser(data[12],data[0]))
+        contract_pre_bulk.append(data_parser(data[12],data[0], 'contract'))
     if data[5] != '': #check if sales_rep empty
-        sales_rep_pre_bulk.append(data_parser(data[5],data[1]))
+        sales_rep_pre_bulk.append(data_parser(data[5],data[1], 'sales_rep'))
     if data[11] != '': #check if staff_for_proj_empty
-        staff_for_proj_pre_bulk.append(data_parser(data[11],data[1]))
+        staff_for_proj_pre_bulk.append(data_parser(data[11],data[1], 'staff_for_proj'))
     if data[8] != '': #check if last_activity empty
         if data[7] != '': #check if last_activity_date empty
             activity=data[8].split('||')
