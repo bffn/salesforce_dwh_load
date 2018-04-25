@@ -165,13 +165,13 @@ for data in reader(f):
     #if data[4] != '': #add Project_of_Sale__c to opp to get contract id later; check if contract empty #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
         #opp_data.update({'Contract_num': data_parser(data[4],data[0])['records'][0]['Project_of_Sale__c']}) #FOR CONTRACTID IN OPPORTUNITY(DON'T DELETE!!!)
     opp_bulk.append(opp_data)
-    if data[6] != '' and data[6] != 'Unknown' and data[6] != '-': #check if contact empty
+    if data[6] != '' and data[6].find(':') != -1: #check if contact empty
         contact_pre_bulk.append(data_parser(data[6], data[0], 'contact')) #get contact data
-    if data[12] != '': #check if contract empty
+    if data[12] != '' and data[12].find(':') != -1: #check if contract empty
         contract_pre_bulk.append(data_parser(data[12],data[0], 'contract'))
-    if data[5] != '': #check if sales_rep empty
+    if data[5] != '' and data[5].find(':') != -1: #check if sales_rep empty
         sales_rep_pre_bulk.append(data_parser(data[5],data[1], 'sales_rep'))
-    if data[11] != '': #check if staff_for_proj_empty
+    if data[11] != '' and data[11].find(':') != -1: #check if staff_for_proj_empty
         staff_for_proj_pre_bulk.append(data_parser(data[11],data[1], 'staff_for_proj'))
     if data[8] != '': #check if last_activity empty
         if data[7] != '': #check if last_activity_date empty
