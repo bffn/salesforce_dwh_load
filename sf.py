@@ -4,8 +4,11 @@ import json
 import time
 import re
 import datetime
-from csv import reader
+import xlrd
+import csv
+import os.path
 from simple_salesforce import Salesforce
+xlsx_raw = '/home/bffn/salesforse/xlsx_raw.xlsx'
 csvfile_raw = '/home/bffn/salesforse/csvdata_raw.csv'
 csvfile='/home/bffn/salesforse/csvdata.csv'
 skip=True  #skip first row
@@ -19,6 +22,25 @@ cred_f.close()
 #########################
 def download_doc():
     print('no_doc')
+
+def parse_raw_fiels():
+#check if two or zero raw files exist
+    if (os.path.isfile(xlsx_raw) and os.path.isfile(csvfile_raw)) or (not os.path.isfile(xlsx_raw) and not os.path.isfile(csvfile_raw)):
+        if (os.path.isfile(xlsx_raw) and os.path.isfile(csvfile_raw)):
+            print("two raw file exist")
+            sys.exit()
+        print("raw file doesn't exist")
+        sys.exit()
+    if os.path.isfile(xlsx_raw):
+        book = xlrd.open_workbook(xlsx_raw)
+        sh = book.sheet_by_index(0)
+        f_raw=open(csvfile_raw,'w+')
+        for rx in range(sh.nrows):
+            f_raw.write(str(sh.row(rx)))
+            f_raw.write('\n')
+            #for cell in sh.row(rx):
+                #print(type(str(cell)))
+    sys.exit()
 
 def data_parser(d_row,acc, obj_type):
     out_json={}
@@ -55,18 +77,6 @@ def data_parser(d_row,acc, obj_type):
     out_json.update({'records': data_list, 'Acc': acc})
     return out_json
 
-# def data_parser(d_row, acc):
-    # out_json={}
-    # data_list=[]
-    # for row in d_row.strip().split('||'):
-        # row_data={}
-        # for field in row.split(';'):
-            # p_f=field.split(':')
-            # row_data.update({p_f[0]: p_f[1]})
-        # data_list.append(row_data)
-    # out_json.update({'records': data_list, 'Acc': acc})
-    # return out_json
-
 def bulk_del(d_ids, obj):
     res=[]
     for x in d_ids['records']:
@@ -75,39 +85,16 @@ def bulk_del(d_ids, obj):
     if res:
         obj(res)
 
-# def bulk_del(d_ids, obj): #del data from SF
-    # res=[]
-    # for x in d_ids['records']:
-        # del_id={'Id': x['Id']}
-        # res.append(del_id)
-    # if res:
-        # if obj=='Account':
-            # sf.bulk.Account.delete(res)
-        # elif obj=='Opportunity':
-            # sf.bulk.Opportunity.delete(res)
-        # elif obj=='Contact':
-            # sf.bulk.Contact.delete(res)
-        # elif obj=='Contract':
-            # sf.bulk.Contract.delete(res)
-        # elif obj=='Sales_rep__c':
-            # sf.bulk.Sales_rep__c.delete(res)
-        # elif obj=='Sales_rep_with_opportunity__c':
-            # sf.bulk.Sales_rep_with_opportunity__c.delete(res)
-        # elif obj=='Staff_for_Projects__c':
-            # sf.bulk.Staff_for_Projects__c.delete(res)
-        # elif obj=='Responsible_presales_person__c':
-            # sf.bulk.Responsible_presales_person__c.delete(res)
-        # elif obj=='Task':
-            # sf.bulk.Task.delete(res)
 #main code
 print("Script started at",time.strftime('%X'))
-download_doc()
+#download_doc()
+#parse_raw_fiels()
 #Parse raw file in csvfile
 f=open(csvfile,'w+')
 try:
     f_raw=open(csvfile_raw,'r')
 except FileNotFoundError:
-    sys.exit('File with raw data does not exist')
+    sys.exit('File with raw csv data does not exist')
 for row in f_raw:
     if skip:  #skip first row
         skip=False
@@ -150,8 +137,8 @@ opp_contact_bulk=[]
 opp_acc_id=[]
 contact_acc_id=[]
 opportunity_contact=[]
-f.seek(0) #read file from begining
-for data in reader(f):
+f.seek(0) #read file from beginning
+for data in csv.reader(f):
     if data[4] == 'Open':
         acc_active = 'Yes'
     else:
